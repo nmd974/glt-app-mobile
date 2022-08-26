@@ -1,0 +1,117 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/places/tabs/offers"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ step.label }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+
+  <ion-grid *ngIf="isLoading" id="container">
+    <ion-row>
+      <ion-col size="12" size-sm="8" offset-sm="2" class="ion-text-center">
+        <ion-spinner color="primary"></ion-spinner>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <ion-col *ngIf="step !== null && step.arrivedAt === null" id="container">
+    <ion-button expand="block" color="primary" (click)="markAsArrived()">
+      <ion-icon slot="start" name="caret-forward-outline"></ion-icon>
+      Arrivée
+    </ion-button>
+  </ion-col>
+
+  <ion-col *ngIf="step !== null && step.startAt === null && step.arrivedAt !== null" id="container">
+    <ion-button expand="block" color="primary" (click)="startDelivery()">
+      <ion-icon slot="start" name="caret-forward-outline"></ion-icon>
+      Commencer le déchargement
+    </ion-button>
+  </ion-col>
+
+  <ion-grid *ngIf="step !== null && step.endAt === null && step.startAt !== null">
+    <form #f="ngForm" (ngSubmit)="markAsDelivered(f)">
+    <ion-row *ngFor="let order of step.orders">
+      <ion-col>
+        <ion-item-group>
+          <ion-item-divider color="primary">
+            <ion-label>Référence : {{ order.reference }}</ion-label>
+          </ion-item-divider>
+          <ion-item>
+            <ion-label>Palettes</ion-label>
+          </ion-item>
+          <ion-item>
+            <ion-button slot="start" (click)="removePalet(order.id)">
+              <ion-icon slot="icon-only" name="remove-outline"></ion-icon>
+            </ion-button>
+            <ion-input
+            type="number"
+            required="true"
+            class="ion-text-center"
+
+            name="data"
+            min="0"
+            value="{{ order.details.details[0].palets }}">
+          </ion-input>
+          <ion-button slot="end" (click)="addPalet(order.id)">
+            <ion-icon slot="icon-only" name="add-outline"></ion-icon>
+          </ion-button>
+        </ion-item>
+      </ion-item-group>
+    </ion-col>
+  </ion-row>
+  <ion-col>
+    <ion-item-group>
+      <ion-item-divider class="ion-margin-top" color="primary">
+        <ion-label>Signataire</ion-label>
+      </ion-item-divider>
+      <ion-list>
+        <ion-item>
+          <ion-select placeholder="Select fruit">
+            <ion-select-option value="apples">Apples</ion-select-option>
+            <ion-select-option value="oranges">Oranges</ion-select-option>
+            <ion-select-option value="bananas">Bananas</ion-select-option>
+          </ion-select>
+        </ion-item>
+      </ion-list>
+    </ion-item-group>
+  </ion-col>
+  <ion-row >
+    <ion-col>
+      <ion-item-group>
+        <ion-item-divider class="ion-margin-top" color="primary">
+          <ion-label>Signature</ion-label>
+        </ion-item-divider>
+        <ion-item>
+          <div class="signature_pad">
+            <canvas  #canvas (touchstart)="startDrawing($event)" (touchmove)="moved($event)"></canvas>
+          </div>
+
+        </ion-item>
+      </ion-item-group>
+    </ion-col>
+    <ion-col size="12" class="ion-text-center">
+      <ion-button color="secondary" (click)="clearPad()">
+        Recommencer
+      </ion-button>
+    </ion-col>
+  </ion-row>
+  <ion-col>
+    <ion-button class="ion-margin-top" expand="block" color="primary" type="submit">
+      <ion-icon slot="start" name="caret-forward-outline"></ion-icon>
+      Terminer
+    </ion-button>
+  </ion-col>
+</form>
+</ion-grid>
+
+<ion-col *ngIf="step !== null && step.leaveAt === null && step.endAt !== null" id="container">
+  <ion-button expand="block" color="primary" (click)="markAsLeft()">
+    <ion-icon slot="start" name="caret-forward-outline"></ion-icon>
+    Quitter
+  </ion-button>
+</ion-col>
+
+</ion-content>

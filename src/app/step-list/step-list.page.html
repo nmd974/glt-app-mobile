@@ -1,0 +1,63 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Mes livraisons</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-grid *ngIf="isLoading" id="container">
+    <ion-row>
+      <ion-col size="12" size-sm="8" offset-sm="2" class="ion-text-center">
+        <ion-spinner color="primary"></ion-spinner>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+  <ion-grid *ngIf="!isLoading">
+    <ion-row>
+      <ion-col *ngIf="myTour !== null && myTour.beginAt !== null && loadedSteps.length > 0">
+        <ion-card *ngFor="let item of loadedSteps" (click)="goToStep(item.id)">
+          <ion-card-header>
+            <ion-card-title>{{ item.label }}</ion-card-title>
+            <ion-card-subtitle>
+              {{ item.foreseenArrival | timeLocal }}
+            </ion-card-subtitle>
+          </ion-card-header>
+          <ion-card-content>
+            {{ item.recapToDeliver }} palettes
+          </ion-card-content>
+          <!-- <ion-card-content *ngFor="let order of item.orders">
+            {{ order.details.details[0].palets }} palettes
+          </ion-card-content> -->
+        </ion-card>
+      </ion-col>
+      <ion-col *ngIf="myTour !== null && myTour.beginAt === null" id="container">
+        <ion-button expand="block" color="secondary" (click)="beginTour(myTour.id)">
+          <ion-icon slot="start" name="caret-forward-outline"></ion-icon>
+          Commencer ma tournée
+        </ion-button>
+      </ion-col>
+    </ion-row>
+    <ion-row *ngIf="myTour === null">
+      <ion-col id="container">
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>Vous n'avez pas de tournée prévue ce jour.</ion-card-title>
+          </ion-card-header>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+    <ion-row *ngIf="myTour !== null && myTour.beginAt !== null && loadedSteps.length < 1">
+      <ion-col id="container">
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>Vous avez terminé vos livraisons du jour</ion-card-title>
+          </ion-card-header>
+        </ion-card>
+        <ion-button *ngIf="myTour.endAt === null" expand="block" color="secondary" (click)="endTour(myTour.id)">
+          <ion-icon slot="start" name="flag-outline"></ion-icon>
+          Terminer ma tournée
+        </ion-button>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</ion-content>
