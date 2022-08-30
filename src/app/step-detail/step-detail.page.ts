@@ -1,11 +1,13 @@
 import { AfterViewInit, Component, ElementRef, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { LoadingController } from '@ionic/angular';
-import { Subscription } from 'rxjs';
+import { AlertController, LoadingController } from '@ionic/angular';
+import { of, Subscription } from 'rxjs';
 import { Step } from '../models/step.model';
 import { StepService } from '../services/step.service';
 import SignaturePad from 'signature_pad';
-import { NgForm } from '@angular/forms';
+import { FormArray, FormControl, FormGroup, NgForm, Validators } from '@angular/forms';
+import { Signatory } from '../models/signatory.model';
+import { SignatoryService } from '../services/signatories.service';
 
 @Component({
   selector: 'app-step-detail',
@@ -17,14 +19,19 @@ export class StepDetailPage implements OnInit, OnDestroy, AfterViewInit, OnChang
   @ViewChild('canvas') canvasEl : ElementRef;
   signaturePad: SignaturePad;
   step: Step = null;
+  signatories: Signatory[] = null;
   idConcerned: number = 0;
   isLoading: boolean = true;
+  deliveryForm: FormGroup;
   private stepSubscription: Subscription;
+  private signsSubscription: Subscription;
   constructor(
     private loadingCtrl: LoadingController,
     private actualRoute: ActivatedRoute,
     private stepService: StepService,
     private router: Router,
+    private alertController: AlertController,
+    private signatoryService: SignatoryService,
   ) { }
 
   ngOnInit() {
@@ -40,31 +47,59 @@ export class StepDetailPage implements OnInit, OnDestroy, AfterViewInit, OnChang
         this.step = stepData[0];
         this.idConcerned = this.step.id;
         console.log(this.step);
+        if(this.step.startAt !== null && this.step.leaveAt === null){
+          this.signsSubscription = this.signatoryService.signatoriesData.subscribe(signs => {
+            this.signatories = signs;
+            this.initForm();
+          });
+          this.signatoryService.fetchSignatorys(this.step.orders[0].locationId);
+        }
         this.isLoading = false;
       }
     })
   }
 
   ngAfterViewInit() {
-    if(this.step.startAt !== null){
+    if(this.step.startAt !== null && this.step.leaveAt === null){
       this.signaturePad = new SignaturePad(this.canvasEl.nativeElement);
     }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if(this.step.startAt !== null){
+    if(this.step.startAt !== null && this.step.leaveAt === null){
       this.signaturePad = new SignaturePad(this.canvasEl.nativeElement);
+      if(this.signatories === null){
+        this.signsSubscription = this.signatoryService.signatoriesData.subscribe(signs => {
+          this.signatories = signs;
+          this.initForm();
+        });
+        this.signatoryService.fetchSignatorys(this.step.orders[0].details.details[0].locationId);
+      }
     }
   }
 
-  startDrawing(event: Event) {
-    console.log(event);
-    // works in device not in browser
-
+  initForm(){
+    let paletsForm = new FormArray([]);
+    for (const order of this.step.orders) {
+      paletsForm.push(
+        new FormGroup({
+          'reference': new FormControl(order.reference),
+          'paletsQty': new FormControl(order.details.details[0].palets, [
+            Validators.required,
+            Validators.pattern(/^[1-9]+[0-9]*$/)
+          ])
+        })
+      )
+    }
+    this.deliveryForm = new FormGroup({
+      'signatureRefused': new FormControl(false),
+      'signatory': new FormControl(this.signatories),
+      'palets': paletsForm
+    });
   }
 
-  moved(event: Event) {
-    // works in device not in browser
+  get paletsForm(){
+    return this.deliveryForm.controls["palets"] as FormArray;
   }
 
   clearPad() {
@@ -101,24 +136,88 @@ export class StepDetailPage implements OnInit, OnDestroy, AfterViewInit, OnChang
     });
   }
 
-  markAsDelivered(form: NgForm){
-    // this.loadingCtrl
-    // .create({
-    //   message: 'Chargement...'
-    // })
-    // .then(loadingEl => {
-    //   loadingEl.present();
-    //   this.stepService
-    //   .markAsDelivered(this.idConcerned)
-    //   .subscribe(() => {
-    //     loadingEl.dismiss();
-    //   });
-    // });
-    console.log(form);
-    if(this.signaturePad.isEmpty()){
-      //pas submit
+  async markAsDelivered(){
+    if(this.deliveryForm.valid){
+      if(this.signaturePad.isEmpty() && !this.deliveryForm.controls["signatureRefused"].value && this.deliveryForm.controls["signatory"].value === ""){
+        const alert = await this.alertController.create({
+          header: 'Validation impossible',
+          message: 'Veuillez renseigner le signataire et faire signer la livraison, ou cochez le refus de signature',
+          buttons: ['OK'],
+        });
+
+        await alert.present();
+        return;
+      }
+      else if(!this.signaturePad.isEmpty() && this.deliveryForm.controls["signatory"].value === ""){
+        const alert = await this.alertController.create({
+          header: 'Validation impossible',
+          message: 'Veuillez renseigner le signataire, ou cochez le refus de signature',
+          buttons: ['OK'],
+        });
+
+        await alert.present();
+        return;
+      }
+      else if(this.deliveryForm.controls["signatory"].value !== "" && this.signaturePad.isEmpty() && !this.deliveryForm.controls["signatureRefused"].value){
+        const alert = await this.alertController.create({
+          header: 'Validation impossible',
+          message: 'Veuillez faire signer la livraison, ou cochez le refus de signature',
+          buttons: ['OK'],
+        });
+
+        await alert.present();
+        return;
+      }
+
+      for (const order of this.step.orders) {
+        this.deliveryForm.value.palets.forEach(async element => {
+          if(order.reference === element.reference){
+            console.log(element.paletsQty);
+            const orderUpdated = {
+              details: {
+                "details":[
+                  {
+                    "palets": order.details.details[0].palets,
+                    "packgings": order.details.details[0].packgings,
+                    "weight": order.details.details[0].weight,
+                    "deliveredPalets": element.paletsQty
+                  }
+                ]
+              },
+            }
+            console.log(orderUpdated);
+            of(this.stepService.updateOrder(order.id, orderUpdated));
+          }
+        });
+      }
+      let stepUpdated = null;
+      if(this.deliveryForm.controls["signatureRefused"].value){
+        stepUpdated = {
+          signatory: null,
+          signature: null,
+          signatureRefused: true
+        }
+      }else{
+        stepUpdated = {
+          signatory: this.deliveryForm.controls["signatory"].value,
+          signature: this.signaturePad.toDataURL(),
+          signatureRefused: false
+        }
+      }
+      this.loadingCtrl
+      .create({
+        message: 'Chargement...'
+      })
+      .then(loadingEl => {
+        loadingEl.present();
+        this.stepService
+        .markAsDelivered(this.idConcerned, stepUpdated)
+        .subscribe(() => {
+          loadingEl.dismiss();
+        });
+      });
+
     }
-    console.log(this.signaturePad);
   }
 
   markAsLeft(){
@@ -137,23 +236,42 @@ export class StepDetailPage implements OnInit, OnDestroy, AfterViewInit, OnChang
     this.router.navigateByUrl('/my-tour/tabs/step-list');
   }
 
-  removePalet(id){
-    const order = this.step.orders.filter(x => x.id === id);
-    if(order){
-      order[0].details.details[0] -= 1;
+  removePalet(i){
+    // const order = this.step.orders.filter(x => x.id === id);
+    // if(order){
+    //   order[0].details.details[0].palets -= 1;
+    // }
+    const oldValue = this.paletsForm.controls[i].value.paletsQty;
+    const newVal = this.paletsForm.controls[i].value.paletsQty = oldValue - 1;
+    if(newVal > 0){
+      this.paletsForm.controls[i].setValue({
+        'paletsQty': newVal,
+        'reference': this.paletsForm.controls[i].value.reference
+      });
     }
   }
 
-  addPalet(id){
-    const order = this.step.orders.filter(x => x.id === id);
-    if(order){
-      order[0].details.details[0] += 1;
-    }
+  addPalet(i){
+    // const order = this.step.orders.filter(x => x.id === id);
+    // if(order){
+    //   order[0].details.details[0].palets += 1;
+    // }
+    const oldValue = this.paletsForm.controls[i].value.paletsQty;
+    const newVal = this.paletsForm.controls[i].value.paletsQty = oldValue + 1;
+    this.paletsForm.controls[i].setValue({
+      'paletsQty': newVal,
+      'reference': this.paletsForm.controls[i].value.reference
+    });
+    // console.log(this.paletsForm.controls[i].controls.paletsQty.setValue(oldValue + 1));
+    // console.log((<FormArray>this.deliveryForm.get('palets')).controls[i].control);
   }
 
   ngOnDestroy(): void {
     if(this.stepSubscription){
       this.stepSubscription.unsubscribe();
+    }
+    if(this.signsSubscription){
+      this.signsSubscription.unsubscribe();
     }
   }
 

@@ -104,7 +104,27 @@ export class StepService {
     )
   }
 
-  markAsDelivered(id: number){
+  updateOrder(id: number, data: any){
+    return this.http.put<any>(`${environment.backendURL}/order/details/${id}`, data)
+    .subscribe(
+      {
+        next: (v) => {
+          if(v.hasOwnProperty("affected") && v.affected > 0){
+            return true;
+          }
+        },
+        error: (e) => console.error(e.error.message)
+      }
+    )
+    ;
+  }
+
+  markAsDelivered(id: number, data: any){
+    // for (let i = 0; i < ordersIds.length; i++) {
+    //   const element = ordersIds[i];
+    //   of(this.updateOrder(+element, data));
+
+    // }
     let updatedStep: Step[];
     return this.stepsData.pipe(
       take(1),
@@ -115,13 +135,14 @@ export class StepService {
       switchMap(steps => {
         return of(steps);
       }),
+      //Mettre à jour les commandes Puis si tout est ok on met à jour l'étape
       switchMap(steps => {
         const index = steps.findIndex((x) => x.id === id);
         updatedStep = [...steps];
         const oldStep = updatedStep[index];
         updatedStep[index].endAt = new Date();
         return this.http
-        .put(`${BACKEND_URL}/end/${id}`, null);
+        .put(`${BACKEND_URL}/end/${id}`, data);
       }),
       tap(() => {
         this._steps.next(updatedStep);
@@ -141,10 +162,7 @@ export class StepService {
         return of(steps);
       }),
       switchMap(steps => {
-        const index = steps.findIndex((x) => x.id === id);
-        updatedStep = [...steps];
-        const oldStep = updatedStep[index];
-        updatedStep[index].leaveAt = new Date();
+        const updatedStep = steps.filter((x) => x.id === id);
         return this.http
         .put(`${BACKEND_URL}/left/${id}`, null);
       }),

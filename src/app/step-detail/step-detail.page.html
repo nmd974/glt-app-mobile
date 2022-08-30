@@ -32,10 +32,10 @@
   </ion-col>
 
   <ion-grid *ngIf="step !== null && step.endAt === null && step.startAt !== null">
-    <form #f="ngForm" (ngSubmit)="markAsDelivered(f)">
+    <form [formGroup]="deliveryForm" (ngSubmit)="markAsDelivered()">
     <ion-row *ngFor="let order of step.orders">
       <ion-col>
-        <ion-item-group>
+        <!-- <ion-item-group>
           <ion-item-divider color="primary">
             <ion-label>Référence : {{ order.reference }}</ion-label>
           </ion-item-divider>
@@ -50,7 +50,7 @@
             type="number"
             required="true"
             class="ion-text-center"
-
+            ngModel
             name="data"
             min="0"
             value="{{ order.details.details[0].palets }}">
@@ -59,7 +59,33 @@
             <ion-icon slot="icon-only" name="add-outline"></ion-icon>
           </ion-button>
         </ion-item>
+      </ion-item-group> -->
+      <ng-container formArrayName="palets">
+        <ion-item-group *ngFor="let order of paletsForm.controls; let i=index" [formGroupName]="i">
+          <ion-item-divider color="primary">
+            <ion-label>Référence : {{ order.value.reference }}</ion-label>
+          </ion-item-divider>
+          <ion-item>
+            <ion-label>Palettes</ion-label>
+          </ion-item>
+          <ion-item>
+            <ion-button slot="start" color="danger" (click)="removePalet(i)">
+              <ion-icon slot="icon-only" name="remove-outline"></ion-icon>
+            </ion-button>
+            <ion-input
+            type="number"
+            required="true"
+            class="ion-text-center"
+            formControlName="paletsQty">
+          </ion-input>
+          <ion-button slot="end" color="success" (click)="addPalet(i)">
+            <ion-icon slot="icon-only" name="add-outline"></ion-icon>
+          </ion-button>
+        </ion-item>
       </ion-item-group>
+      </ng-container>
+
+
     </ion-col>
   </ion-row>
   <ion-col>
@@ -69,10 +95,8 @@
       </ion-item-divider>
       <ion-list>
         <ion-item>
-          <ion-select placeholder="Select fruit">
-            <ion-select-option value="apples">Apples</ion-select-option>
-            <ion-select-option value="oranges">Oranges</ion-select-option>
-            <ion-select-option value="bananas">Bananas</ion-select-option>
+          <ion-select placeholder="Selectionnez le signataire" formControlName="signatory" #signatory>
+            <ion-select-option *ngFor="let sign of signatories" [value]="sign.label">{{ sign.label }}</ion-select-option>
           </ion-select>
         </ion-item>
       </ion-list>
@@ -86,7 +110,7 @@
         </ion-item-divider>
         <ion-item>
           <div class="signature_pad">
-            <canvas  #canvas (touchstart)="startDrawing($event)" (touchmove)="moved($event)"></canvas>
+            <canvas #canvas></canvas>
           </div>
 
         </ion-item>
@@ -96,6 +120,14 @@
       <ion-button color="secondary" (click)="clearPad()">
         Recommencer
       </ion-button>
+    </ion-col>
+  </ion-row>
+  <ion-row>
+    <ion-col>
+      <ion-item>
+        <ion-label>Refus de signature</ion-label>
+        <ion-toggle color="danger" formControlName="signatureRefused" #signatureRefused></ion-toggle>
+      </ion-item>
     </ion-col>
   </ion-row>
   <ion-col>
