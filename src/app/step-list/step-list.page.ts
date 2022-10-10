@@ -29,6 +29,7 @@ export class StepListPage implements OnInit, OnDestroy {
   ngOnInit() {
     this.authSubscription = this.authService.userId.subscribe(id => {
       this.tourSubscription = this.tourService.toursData.subscribe(data => {
+        console.log(data);
         this.myTour = data;
         if(this.myTour && this.myTour.beginAt !== null){
           this.stepSubscription = this.stepService.stepsData.subscribe(data => {
@@ -78,7 +79,4 @@ export class StepListPage implements OnInit, OnDestroy {
       this.tourSubscription.unsubscribe();
     }
   }
-
-
-
 }

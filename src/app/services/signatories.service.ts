@@ -11,6 +11,7 @@ const BACKEND_URL = environment.backendURL + '/signatory';
   providedIn: 'root'
 })
 export class SignatoryService {
+
   private _signatories = new BehaviorSubject<Signatory[]>([]);
 
   get signatoriesData(){

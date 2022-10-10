@@ -1,9 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
-import { AuthService } from '../auth/auth.service';
 import { Tour } from '../models/tour.model';
 
 const BACKEND_URL = environment.backendURL;

@@ -39,22 +39,25 @@ export class StepDetailPage implements OnInit, OnDestroy, AfterViewInit, OnChang
      * Si pas encore arrivée alors bouton "je suis arrivé"
      * Si pas encore commencé à déchargé "Décharger"
      * Afficher le contenu de la commande en formulaire + bouton terminer
-     * Commentaires + bouton quitter puis redirect vers liste des livraisons
+     * Si fin de déchargement bouton quitter puis redirect vers liste des livraisons
      */
-    this.stepSubscription = this.stepService.stepsData.subscribe(data => {
+    this.stepSubscription = this.stepService.stepsData.subscribe((data: Step[]) => {
       const stepData = data.filter(x => x.id === parseInt(this.actualRoute.snapshot.params.stepId));
       if(stepData){
         this.step = stepData[0];
         this.idConcerned = this.step.id;
-        console.log(this.step);
         if(this.step.startAt !== null && this.step.leaveAt === null){
-          this.signsSubscription = this.signatoryService.signatoriesData.subscribe(signs => {
+          //Déclenche le module de signature et du formulaire
+          this.signsSubscription = this.signatoryService.signatoriesData.subscribe((signs: Signatory[]) => {
             this.signatories = signs;
             this.initForm();
           });
           this.signatoryService.fetchSignatorys(this.step.orders[0].locationId);
         }
         this.isLoading = false;
+      }else{
+        //Redirection vers la liste des étapes
+        this.router.navigateByUrl('/my-tour/tabs/step-list');
       }
     })
   }
@@ -66,7 +69,8 @@ export class StepDetailPage implements OnInit, OnDestroy, AfterViewInit, OnChang
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if(this.step.startAt !== null && this.step.leaveAt === null){
+    if(this.step.startAt !== null && this.step.endAt !== null && this.step.leaveAt === null){
+      console.log("change");
       this.signaturePad = new SignaturePad(this.canvasEl.nativeElement);
       if(this.signatories === null){
         this.signsSubscription = this.signatoryService.signatoriesData.subscribe(signs => {
@@ -113,6 +117,7 @@ export class StepDetailPage implements OnInit, OnDestroy, AfterViewInit, OnChang
     })
     .then(loadingEl => {
       loadingEl.present();
+      this.step.arrivedAt = new Date();
       this.stepService
       .markAsArrived(this.idConcerned)
       .subscribe(() => {
@@ -128,10 +133,12 @@ export class StepDetailPage implements OnInit, OnDestroy, AfterViewInit, OnChang
     })
     .then(loadingEl => {
       loadingEl.present();
+      this.step.startAt = new Date();
       this.stepService
       .startDelivery(this.idConcerned)
       .subscribe(() => {
         loadingEl.dismiss();
+        console.log("start deliver");
       });
     });
   }
@@ -210,6 +217,7 @@ export class StepDetailPage implements OnInit, OnDestroy, AfterViewInit, OnChang
       })
       .then(loadingEl => {
         loadingEl.present();
+        this.step.endAt = new Date();
         this.stepService
         .markAsDelivered(this.idConcerned, stepUpdated)
         .subscribe(() => {
@@ -227,6 +235,7 @@ export class StepDetailPage implements OnInit, OnDestroy, AfterViewInit, OnChang
     })
     .then(loadingEl => {
       loadingEl.present();
+      this.step.leaveAt = new Date();
       this.stepService
       .markAsLeft(this.idConcerned)
       .subscribe(() => {
