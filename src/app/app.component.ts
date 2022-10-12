@@ -6,7 +6,9 @@ import { Platform } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { AuthService } from './auth/auth.service';
-
+import { Geolocation } from '@awesome-cordova-plugins/geolocation/ngx';
+import { WebsocketService } from './services/websocket.service';
+import { GeolocationService } from './services/geolocation.service';
 @Component({
   selector: 'app-root',
   templateUrl: 'app.component.html',
@@ -19,7 +21,9 @@ export class AppComponent {
   constructor(
     private platform: Platform,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private geolocation: Geolocation,
+    private geolocationService: GeolocationService,
   ) {
     this.initializeApp();
   }
@@ -29,6 +33,7 @@ export class AppComponent {
       if (Capacitor.isPluginAvailable('SplashScreen')) {
         Plugins.SplashScreen.hide();
       }
+
     });
   }
 
@@ -38,11 +43,28 @@ export class AppComponent {
         this.router.navigateByUrl('/auth');
       }
       this.previousAuthState = isAuth;
+      let watch = this.geolocation.watchPosition();
+      watch.subscribe((data) => {
+        console.log(data);
+        this.sendPosition(data);
+      });
     });
     App.addListener(
       'appStateChange',
       this.checkAuthOnResume.bind(this)
     );
+
+
+  }
+
+  sendPosition(data: any) {
+    let position = {
+      latitude: '',
+      longitude: ''
+    };
+    position.latitude = data.coords.latitude;
+    position.longitude = data.coords.longitude;
+    this.geolocationService.sendMsg(position);
   }
 
   onLogout() {
