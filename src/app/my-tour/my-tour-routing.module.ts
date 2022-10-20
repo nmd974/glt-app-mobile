@@ -24,7 +24,22 @@ const routes: Routes = [
       },
       {
         path: 'anomaly',
-        loadChildren: () => import('../anomaly/anomaly.module').then( m => m.AnomalyPageModule)
+        children: [
+          {path: '', loadChildren: () => import('../anomaly/anomaly.module').then( m => m.AnomalyPageModule)},
+          {
+            path: 'step-anomaly',
+            loadChildren: () => import('../anomaly/step-anomaly/step-anomaly.module').then( m => m.StepAnomalyPageModule)
+          },
+          {
+            path: 'tour-anomaly',
+            loadChildren: () => import('../anomaly/tour-anomaly/tour-anomaly.module').then( m => m.TourAnomalyPageModule)
+          },
+          {
+            path: 'order-anomaly',
+            loadChildren: () => import('../anomaly/order-anomaly/order-anomaly.module').then( m => m.OrderAnomalyPageModule)
+          }
+        ]
+
       },
       {
         path: 'my-profile',

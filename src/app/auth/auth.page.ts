@@ -44,7 +44,7 @@ export class AuthPage implements OnInit {
             console.log(errRes);
             const code = errRes.error.error.message;
             let message = 'Could not sign you up, please try again.';
-            this.showAlert(message);
+            this.showAlert(errRes.error);
           }
         );
       });
@@ -66,7 +66,7 @@ export class AuthPage implements OnInit {
       .create({
         header: 'Authentication failed',
         message: message,
-        buttons: ['Okay']
+        buttons: ['Ok']
       })
       .then(alertEl => alertEl.present());
   }

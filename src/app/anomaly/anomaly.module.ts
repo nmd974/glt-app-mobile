@@ -8,12 +8,13 @@ import { AnomalyPageRoutingModule } from './anomaly-routing.module';
 
 import { AnomalyPage } from './anomaly.page';
 
+
 @NgModule({
   imports: [
     CommonModule,
     FormsModule,
     IonicModule,
-    AnomalyPageRoutingModule
+    AnomalyPageRoutingModule,
   ],
   declarations: [AnomalyPage]
 })

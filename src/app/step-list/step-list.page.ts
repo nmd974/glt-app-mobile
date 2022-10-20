@@ -13,14 +13,12 @@ import { TourService } from '../services/tour.service';
   styleUrls: ['./step-list.page.scss'],
 })
 export class StepListPage implements OnInit, OnDestroy {
-  loadedSteps: Step[];
   myTour: Tour;
   isLoading: boolean = true;
   private stepSubscription: Subscription;
   private tourSubscription: Subscription;
   private authSubscription: Subscription;
   constructor(
-    private stepService: StepService,
     private tourService: TourService,
     private router: Router,
     private authService: AuthService
@@ -31,22 +29,17 @@ export class StepListPage implements OnInit, OnDestroy {
       this.tourSubscription = this.tourService.toursData.subscribe(data => {
         console.log(data);
         this.myTour = data;
-        if(this.myTour && this.myTour.beginAt !== null){
-          this.stepSubscription = this.stepService.stepsData.subscribe(data => {
-            this.loadedSteps = data;
-            this.loadedSteps.forEach(el => {
-              let total = 0;
-              if(el.orders){
-                el.orders.forEach(order => {
-                  total += order.details.details[0].palets;
-                })
-              }
-              el.recapToDeliver = total;
-            })
-            this.isLoading = false;
-            // console.log(this.myTour);
+        if(this.myTour && this.myTour.steps && this.myTour.beginAt !== null){
+          this.myTour.steps.forEach(el => {
+            let total = 0;
+            if(el.orders){
+              el.orders.forEach((order: { details: { details: { palets: number; }[]; }; }) => {
+                total += order.details.details[0].palets;
+              })
+            }
+            el.recapToDeliver = total;
           })
-          this.stepService.fetchSteps(this.myTour.steps);
+          this.isLoading = false;
         }else{
           this.isLoading = false;
         }

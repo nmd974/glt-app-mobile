@@ -14,8 +14,8 @@
   </ion-grid>
   <ion-grid *ngIf="!isLoading">
     <ion-row>
-      <ion-col *ngIf="myTour !== null && myTour.beginAt !== null && loadedSteps.length > 0">
-        <ion-card *ngFor="let item of loadedSteps" (click)="goToStep(item.id)">
+      <ion-col *ngIf="myTour !== null && myTour.beginAt !== null && myTour.steps.length > 0">
+        <ion-card *ngFor="let item of myTour.steps" (click)="goToStep(item.id)">
           <ion-card-header>
             <ion-card-title>{{ item.label }}</ion-card-title>
             <ion-card-subtitle>
@@ -46,7 +46,7 @@
         </ion-card>
       </ion-col>
     </ion-row>
-    <ion-row *ngIf="myTour !== null && myTour.beginAt !== null && loadedSteps.length < 1">
+    <ion-row *ngIf="myTour !== null && myTour.beginAt !== null && myTour.steps.length < 1">
       <ion-col id="container">
         <ion-card>
           <ion-card-header>

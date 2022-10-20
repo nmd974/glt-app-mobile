@@ -1,0 +1,56 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/my-tour/tabs/anomaly"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Anomalie sur tournée</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-grid *ngIf="isLoading" id="container">
+    <ion-row>
+      <ion-col size="12" size-sm="8" offset-sm="2" class="ion-text-center">
+        <ion-spinner color="primary"></ion-spinner>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <ion-grid *ngIf="!isLoading">
+    <form [formGroup]="anomalyForm" (ngSubmit)="submit()">
+      <ion-col>
+        <ion-item-group>
+          <ion-item-divider class="ion-margin-top" color="primary">
+            <ion-label>Type d'anomalie</ion-label>
+          </ion-item-divider>
+          <ion-list>
+            <ion-item>
+              <ion-select placeholder="Selectionnez le type d'anomalie" formControlName="type" #type>
+                <ion-select-option *ngFor="let type of types" [value]="type.id">{{ type.label }}</ion-select-option>
+              </ion-select>
+            </ion-item>
+          </ion-list>
+        </ion-item-group>
+      </ion-col>
+      <ion-col>
+        <ion-item-group>
+          <ion-item-divider class="ion-margin-top" color="primary">
+            <ion-label>Commentaires</ion-label>
+          </ion-item-divider>
+          <ion-item>
+            <ion-label position="floating">Description</ion-label>
+            <ion-textarea formControlName="comment" #comment></ion-textarea>
+          </ion-item>
+        </ion-item-group>
+
+      </ion-col>
+      <ion-col>
+        <ion-button class="ion-margin-top" expand="block" color="success" type="submit">
+          <ion-icon slot="start" name="save-outline"></ion-icon>
+          Enregistrer
+        </ion-button>
+      </ion-col>
+    </form>
+  </ion-grid>
+
+</ion-content>

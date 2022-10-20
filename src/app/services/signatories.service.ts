@@ -23,7 +23,7 @@ export class SignatoryService {
   ) { }
 
   fetchSignatorys(locationId: number){
-    this.http
+    return this.http
     .get<Signatory[]>(`${BACKEND_URL}/location/${locationId}`)
     .pipe(
       map((data) => {
