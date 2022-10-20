@@ -19,6 +19,7 @@ import { ToastService } from './services/toast.service';
 export class AppComponent {
   watchCoordinate: any;
   watch: any;
+  watchId: number;
   private authSub: Subscription;
   private previousAuthState = false;
   private snackMessage: Subscription = new Subscription();
@@ -41,53 +42,44 @@ export class AppComponent {
       if (Capacitor.isPluginAvailable('SplashScreen')) {
         Plugins.SplashScreen.hide();
       }
-
     });
   }
 
   ngOnInit() {
-    this.authSub = this.authService.userIsAuthenticated.subscribe(isAuth => {
-
+    this.authSub = this.authService.userIsAuthenticated.subscribe((isAuth) => {
       if (!isAuth && this.previousAuthState !== isAuth) {
+        this.clearWatch();
         this.router.navigateByUrl('/auth');
       }
 
       this.previousAuthState = isAuth;
-      if(this.previousAuthState){
-        try {
-          let watch = this.geolocation.watchPosition();
-          console.log(watch);
-          this.watch = watch.subscribe((data: GeolocationPosition) => {
-            console.log(data);
-            this.watchCoordinate = {
-              latitude: data.coords.latitude,
-              longitude: data.coords.longitude,
-            };
-            this.sendPosition();
-          });
-        } catch (e) {
-          console.error(e);
+
+      if (this.previousAuthState) {
+        //Lancement de la géolocalisation
+        this.manageGeolocation();
+      }
+
+    });
+
+    //Toast service global
+    this.toastService.getMessageUpdateListener();
+    this.snackMessage = this.toastService.messageUpdated.subscribe(
+      async (data: any) => {
+        if (data !== '') {
+          await this.presentToast(data, 'success');
         }
       }
-    });
-    this.toastService.getMessageUpdateListener();
-    this.snackMessage = this.toastService.messageUpdated.subscribe(async (data: any) => {
-      if(data !== ""){
-        await this.presentToast(data, 'success');
-      }
-    })
+    );
     this.toastService.getMessageErrorListener();
-    this.snackMessageError = this.toastService.messageError.subscribe(async (data: any) => {
-      if(data !== ""){
-        await this.presentToast(data, 'error');
+    this.snackMessageError = this.toastService.messageError.subscribe(
+      async (data: any) => {
+        if (data !== '') {
+          await this.presentToast(data, 'error');
+        }
       }
-    })
-    App.addListener(
-      'appStateChange',
-      this.checkAuthOnResume.bind(this)
     );
 
-
+    App.addListener('appStateChange', this.checkAuthOnResume.bind(this));
   }
 
   async presentToast(message: string, type: string) {
@@ -99,12 +91,66 @@ export class AppComponent {
       buttons: [
         {
           text: 'Ok',
-          role: 'cancel'
-        }
+          role: 'cancel',
+        },
       ],
     });
 
     await toast.present();
+  }
+
+  async manageGeolocation() {
+    const hasPermission = await this.geolocationService.checkGPSPermission();
+    if (hasPermission) {
+      if (Capacitor.isNative) {
+        const canUseGPS = await this.geolocationService.askToTurnOnGPS();
+        this.postGPSPermission(canUseGPS);
+      } else {
+        this.postGPSPermission(true);
+      }
+    } else {
+      const permission = await this.geolocationService.requestGPSPermission();
+      if (permission === 'CAN_REQUEST' || permission === 'GOT_PERMISSION') {
+        if (Capacitor.isNative) {
+          const canUseGPS = await this.geolocationService.askToTurnOnGPS();
+          this.postGPSPermission(canUseGPS);
+        } else {
+          this.postGPSPermission(true);
+        }
+      } else {
+        this.toastService.addMessageError('Veuillez activer le GPS');
+      }
+    }
+  }
+
+  async postGPSPermission(canUseGPS: boolean) {
+    if (canUseGPS) {
+      this.watchPosition();
+    } else {
+      this.toastService.addMessageError('Veuillez activer le GPS');
+    }
+  }
+
+  async watchPosition() {
+    try {
+      let watch = this.geolocation.watchPosition();
+      console.log(watch);
+      this.watch = watch.subscribe((data: GeolocationPosition) => {
+        this.watchCoordinate = {
+          latitude: data.coords.latitude,
+          longitude: data.coords.longitude,
+        };
+        this.sendPosition();
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  clearWatch() {
+    if (this.watchId != null) {
+      this.watch.clearWatch({ id: this.watchId });
+    }
   }
 
   sendPosition() {
@@ -119,6 +165,9 @@ export class AppComponent {
     if (this.authSub) {
       this.authSub.unsubscribe();
     }
+    if(this.watch){
+      this.watch.unsubscribe();
+    }
   }
 
   private checkAuthOnResume(state: AppState) {
@@ -126,7 +175,7 @@ export class AppComponent {
       this.authService
         .autoLogin()
         .pipe(take(1))
-        .subscribe(success => {
+        .subscribe((success) => {
           if (!success) {
             this.onLogout();
           }
