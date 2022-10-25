@@ -1,26 +1,10 @@
-import { AfterViewInit, Component, ElementRef, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
-import { AlertController, LoadingController } from '@ionic/angular';
-import { of, Subscription } from 'rxjs';
-import { Step } from '../models/step.model';
-import { StepService } from '../services/step.service';
-import SignaturePad from 'signature_pad';
-import { FormArray, FormControl, FormGroup, NgForm, Validators } from '@angular/forms';
-import { Signatory } from '../models/signatory.model';
-import { SignatoryService } from '../services/signatories.service';
-import { Tour } from '../models/tour.model';
 
-@Component({
-  selector: 'app-step-detail',
-  templateUrl: './step-detail.page.html',
-  styleUrls: ['./step-detail.page.scss'],
-})
 export class StepDetailPage implements OnInit, OnDestroy, AfterViewInit, OnChanges  {
 
   @ViewChild('canvas') canvasEl : ElementRef;
   signaturePad: SignaturePad;
-  step: Step;
-  signatories: Signatory[] = [];
+  step: Step = null;
+  signatories: Signatory[] = null;
   idConcerned: number = 0;
   isLoading: boolean = true;
   deliveryForm: FormGroup;
@@ -36,7 +20,7 @@ export class StepDetailPage implements OnInit, OnDestroy, AfterViewInit, OnChang
     private alertController: AlertController,
     private signatoryService: SignatoryService,
     private alertCtrl: AlertController
-  ) {}
+  ) { }
 
   async ngOnInit(): Promise<void> {
     /**
@@ -47,33 +31,41 @@ export class StepDetailPage implements OnInit, OnDestroy, AfterViewInit, OnChang
      */
 
     this.tour = this.router.getCurrentNavigation().extras.state;
-    console.log(this.tour);
-    // if(!this.tour){
-    //   this.router.navigateByUrl('/my-tour/tabs/step-list');
-    // }
-    const data = this.stepService.getStepById(parseInt(this.actualRoute.snapshot.params.stepId), this.tour);
-    if(data.length > 0){
-      console.log(data);
-      this.step = data[0];
-      this.idConcerned = this.step.id;
-      this.signatories.push({id: 0, label: "Autre"});
-      if(this.step.orders[0].location.signatories.length > 0){
-        this.signatories.push(this.step.orders[0].location.signatories);
+    this.stepService.getStedById(parseInt(this.actualRoute.snapshot.params.stepId))
+    .then((res: Step) => {
+      console.log(res);
+    })
+    this.stepSubscription = this.stepService.stepsData.subscribe(async (data: Step[]) => {
+      if(data.length > 0){
+        const stepData = data.filter(x => x.id === parseInt(this.actualRoute.snapshot.params.stepId));
+        if(stepData.length > 0){
+          this.step = stepData[0];
+          console.log(this.step);
+          this.idConcerned = this.step.id;
+          if(this.step.startAt !== null && this.step.endAt === null && this.step.leaveAt === null){
+            //Déclenche le module de signature et du formulaire
+            this.signsSubscription = this.signatoryService.signatoriesData.subscribe(async (signs: Signatory[]) => {
+              this.signatories = signs;
+              console.log(this.formInit);
+              if(!this.formInit){
+                await this.initForm();
+              }
+            });
+            await this.signatoryService.fetchSignatorys(this.step.orders[0].locationId).toPromise();
+          }
+          this.isLoading = false;
+        }else{
+          //Redirection vers la liste des étapes
+          this.router.navigateByUrl('/my-tour/tabs/step-list');
+        }
       }
-      if(this.step.startAt !== null && this.step.endAt === null && this.step.leaveAt === null){
-        this.initForm(true);
-      }
-      this.isLoading = false;
-    }
-    else{
-      this.router.navigateByUrl('/my-tour/tabs/step-list');
-    }
+    })
+    await this.stepService.fetchSteps([parseInt(this.actualRoute.snapshot.params.stepId)]).toPromise();
+
   }
 
-
   ngAfterViewInit() {
-    console.log("view init");
-    if(this.step && this.step.startAt !== null && this.step.endAt === null){
+    if(this.step && this.step.startAt !== null && this.step.endAt === null && this.step.leaveAt === null){
       if(!this.signaturePad){
         this.signaturePad = new SignaturePad(this.canvasEl.nativeElement);
       }
@@ -82,7 +74,7 @@ export class StepDetailPage implements OnInit, OnDestroy, AfterViewInit, OnChang
 
   ngOnChanges(changes: SimpleChanges): void {
     console.log("change");
-    if(this.step && this.step.startAt !== null && this.step.endAt === null){
+    if(this.step && this.step.startAt !== null && this.step.endAt === null && this.step.leaveAt === null){
       this.signaturePad = new SignaturePad(this.canvasEl.nativeElement);
       if(this.signatories === null){
         this.signsSubscription = this.signatoryService.signatoriesData.subscribe(signs => {
@@ -96,19 +88,8 @@ export class StepDetailPage implements OnInit, OnDestroy, AfterViewInit, OnChang
     }
   }
 
-  // ngAfterContentChecked(): void {
-  //   //Called after every check of the component's or directive's content.
-  //   //Add 'implements AfterContentChecked' to the class.
-  //   console.log("contentchecked")
-  //   if(this.step && this.step.startAt !== null && this.step.endAt === null && !this.formInit){
-  //     this.initForm();
-  //     if(!this.signaturePad){
-  //       this.signaturePad = new SignaturePad(this.canvasEl.nativeElement);
-  //     }
-  //   }
-  // }
-
-  async initForm(fromInit: boolean = false){
+  async initForm(){
+    console.log("init form");
     if(!this.formInit){
       let paletsForm = new FormArray([]);
       for (const order of this.step.orders) {
@@ -125,13 +106,11 @@ export class StepDetailPage implements OnInit, OnDestroy, AfterViewInit, OnChang
       }
       this.deliveryForm = new FormGroup({
         'signatureRefused': new FormControl(false),
-        'signatory': new FormControl(""),
+        'signatory': new FormControl(this.signatories),
         'palets': paletsForm
       });
-      if(!fromInit && !this.signaturePad && this.signatories.length > 0){
-        setTimeout(() => {
-          this.signaturePad = new SignaturePad(this.canvasEl.nativeElement);
-        }, 2000);
+      if(!this.signaturePad && this.signatories.length > 0){
+        this.signaturePad = new SignaturePad(this.canvasEl.nativeElement);
       }
       this.formInit = true;
     }
@@ -156,7 +135,7 @@ export class StepDetailPage implements OnInit, OnDestroy, AfterViewInit, OnChang
       this.step.arrivedAt = new Date();
       this.stepService
       .markAsArrived(this.idConcerned)
-      .subscribe((data) => {
+      .subscribe(() => {
         loadingEl.dismiss();
       });
     });
@@ -174,14 +153,13 @@ export class StepDetailPage implements OnInit, OnDestroy, AfterViewInit, OnChang
       .startDelivery(this.idConcerned)
       .subscribe(() => {
         loadingEl.dismiss();
-        this.initForm();
+        console.log("start deliver");
       });
     });
   }
 
   async markAsDelivered(){
     if(this.deliveryForm.valid){
-      console.log(this.deliveryForm);
       if(this.signaturePad.isEmpty() && !this.deliveryForm.controls["signatureRefused"].value && this.deliveryForm.controls["signatory"].value === ""){
         const alert = await this.alertController.create({
           header: 'Validation impossible',

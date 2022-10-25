@@ -23,12 +23,18 @@ export class AnomalyPage implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.authSubscription = this.authService.userId.subscribe(id => {
-      this.tourSubscription = this.tourService.toursData.subscribe(data => {
-        console.log(data);
-        this.myTour = data;
-        this.isLoading = false;
-      })
-      this.tourService.fetchTours(id);
+      if(id){
+        this.tourSubscription = this.tourService.toursData.subscribe(data => {
+          console.log(data);
+          if(data){
+            this.myTour = data;
+            this.isLoading = false;
+          }
+
+        })
+        this.tourService.fetchTours(id);
+      }
+
     })
   }
 

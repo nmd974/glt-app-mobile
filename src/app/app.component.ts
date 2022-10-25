@@ -100,6 +100,8 @@ export class AppComponent {
   }
 
   async manageGeolocation() {
+    const connect = await this.geolocationService.connect();
+    console.log(connect);
     const hasPermission = await this.geolocationService.checkGPSPermission();
     if (hasPermission) {
       if (Capacitor.isNative) {
@@ -134,8 +136,8 @@ export class AppComponent {
   async watchPosition() {
     try {
       let watch = this.geolocation.watchPosition();
-      console.log(watch);
       this.watch = watch.subscribe((data: GeolocationPosition) => {
+        console.log(data);
         this.watchCoordinate = {
           latitude: data.coords.latitude,
           longitude: data.coords.longitude,
@@ -166,6 +168,7 @@ export class AppComponent {
       this.authSub.unsubscribe();
     }
     if(this.watch){
+      this.watch.clearWatch();
       this.watch.unsubscribe();
     }
   }

@@ -23,7 +23,7 @@ export class SignatoryService {
   ) { }
 
   fetchSignatorys(locationId: number){
-    return this.http
+    return of(this.http
     .get<Signatory[]>(`${BACKEND_URL}/location/${locationId}`)
     .pipe(
       map((data) => {
@@ -32,9 +32,9 @@ export class SignatoryService {
       })
     )
     .subscribe((data) => {
-      // console.log(data);
+      data.push({id: 0, label: "Autre"});
       this._signatories.next(data);
-    });
+    }));
   }
 
 

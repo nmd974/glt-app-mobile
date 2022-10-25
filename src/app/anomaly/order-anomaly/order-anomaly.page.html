@@ -39,8 +39,8 @@
           </ion-item-divider>
           <ion-list>
             <ion-item>
-              <ion-select placeholder="Selectionnez l'étape concernée" formControlName="order" #order>
-                <ion-select-option *ngFor="let order of orders" [value]="order.id">{{ order.label }}</ion-select-option>
+              <ion-select placeholder="Selectionnez la commande concernée" formControlName="order" #order>
+                <ion-select-option *ngFor="let order of orders" [value]="order.id">{{ order.reference }}</ion-select-option>
               </ion-select>
             </ion-item>
           </ion-list>

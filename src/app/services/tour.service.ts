@@ -33,24 +33,26 @@ export class TourService {
       });
   }
 
-  beginTour(id: number){
+  beginTour(id: number, tour: Tour){
     return this.http
     .put(`${BACKEND_URL}/tour/begin/${id}`, null)
     .subscribe({
       next: (v: any) => {
-        this._tours.next(v);
+        tour.beginAt = new Date();
+        this._tours.next(tour);
       },
       error: (e) => this.toastService.addMessageError(e.error.message),
       complete: () => this.toastService.addMessage('Votre tournée a commencé'),
     });
   }
 
-  endTour(id: number){
+  endTour(id: number, tour: Tour){
     return this.http
     .put(`${BACKEND_URL}/tour/end/${id}`, null)
     .subscribe({
       next: (v: any) => {
-        this._tours.next(v);
+        tour.beginAt = new Date();
+        this._tours.next(tour);
       },
       error: (e) => this.toastService.addMessageError(e.error.message),
       complete: () => this.toastService.addMessage('Votre tournée est terminée'),

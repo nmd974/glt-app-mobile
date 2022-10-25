@@ -14,6 +14,7 @@ import { TourService } from '../services/tour.service';
 })
 export class StepListPage implements OnInit, OnDestroy {
   myTour: Tour;
+  endOfDeliveries: boolean = false;
   isLoading: boolean = true;
   private stepSubscription: Subscription;
   private tourSubscription: Subscription;
@@ -29,9 +30,14 @@ export class StepListPage implements OnInit, OnDestroy {
       this.tourSubscription = this.tourService.toursData.subscribe(data => {
         console.log(data);
         this.myTour = data;
-        if(this.myTour && this.myTour.steps && this.myTour.beginAt !== null){
+        if(this.myTour && this.myTour.steps){
+        // if(this.myTour && this.myTour.steps && this.myTour.beginAt !== null){
+          this.endOfDeliveries = true;
           this.myTour.steps.forEach(el => {
             let total = 0;
+            if(el.leaveAt === null){
+              this.endOfDeliveries = false;
+            }
             if(el.orders){
               el.orders.forEach((order: { details: { details: { palets: number; }[]; }; }) => {
                 total += order.details.details[0].palets;
@@ -49,19 +55,20 @@ export class StepListPage implements OnInit, OnDestroy {
   }
 
   beginTour(id: number){
-    this.tourService.beginTour(id);
+    this.tourService.beginTour(id, this.myTour);
   }
 
   endTour(id: number){
-    this.tourService.endTour(id);
+    this.tourService.endTour(id, this.myTour);
   }
 
-  goToStep(id){
-    console.log(id);
-    this.router.navigate(['/', 'my-tour', 'tabs', 'step-list', id]);
+  goToStep(id: any){
+    this.router.navigate(['/', 'my-tour', 'tabs', 'step-list', id], {state: this.myTour});
+    return;
   }
 
   ngOnDestroy(): void {
+    console.log("DESTROY");
     if(this.stepSubscription){
       this.stepSubscription.unsubscribe();
     }

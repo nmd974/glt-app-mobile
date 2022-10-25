@@ -15,7 +15,7 @@ export class OrderAnomalyPage implements OnInit {
   isLoading: boolean = true;
   types: any;
   data: any;
-  orders: any;
+  orders: any[] = [];
   anomalyForm: FormGroup;
   fb: FormBuilder;
   currentAnomalyType: string = 'order';
@@ -26,7 +26,7 @@ export class OrderAnomalyPage implements OnInit {
     if(this.data){
       await this.storeOrder();
     }
-    if(!this.orders){
+    if(this.orders.length < 1){
       this.router.navigate(['/', 'my-tour', 'tabs', 'anomaly']);
     }
     this.anomalySub = this.anomalyService.anomalysData.subscribe(data => {
@@ -67,9 +67,10 @@ export class OrderAnomalyPage implements OnInit {
     }
   }
 
-  storeOrder(){
+  async storeOrder(){
     for (const step of this.data) {
       if(step.orders){
+        console.log(step.orders);
         for (const order of step.orders) {
           this.orders.push(order);
         }

@@ -27,7 +27,7 @@ export class AuthPage implements OnInit {
   authenticate(email: string, password: string) {
     this.isLoading = true;
     this.loadingCtrl
-      .create({ keyboardClose: true, message: 'Logging in...' })
+      .create({ keyboardClose: true, message: 'Connexion...' })
       .then(loadingEl => {
         loadingEl.present();
         let authObs: Observable<AuthResponseData>;
@@ -43,7 +43,7 @@ export class AuthPage implements OnInit {
             loadingEl.dismiss();
             console.log(errRes);
             const code = errRes.error.error.message;
-            let message = 'Could not sign you up, please try again.';
+            let message = 'Impossible de vous connecter, veuillez réessayer';
             this.showAlert(errRes.error);
           }
         );
@@ -64,8 +64,8 @@ export class AuthPage implements OnInit {
   private showAlert(message: string) {
     this.alertCtrl
       .create({
-        header: 'Authentication failed',
-        message: message,
+        header: 'Echec de l\'authentification',
+        message: "Veuillez vérifier identificants et/ou mot de passe",
         buttons: ['Ok']
       })
       .then(alertEl => alertEl.present());

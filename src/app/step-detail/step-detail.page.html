@@ -3,7 +3,7 @@
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/my-tour/tabs/step-list"></ion-back-button>
     </ion-buttons>
-    <ion-title>{{ step.label }}</ion-title>
+    <ion-title *ngIf="!isLoading">{{ step.orders[0].location.name }}</ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -17,22 +17,29 @@
     </ion-row>
   </ion-grid>
 
-  <ion-col *ngIf="step !== null && step.arrivedAt === null" id="container">
+  <ion-col *ngIf="step && step.arrivedAt === null" id="container">
     <ion-button expand="block" color="primary" (click)="markAsArrived()">
-      <ion-icon slot="start" name="caret-forward-outline"></ion-icon>
+      <ion-icon slot="start" name="caret-forward-outline" size="large"></ion-icon>
       Arrivée
     </ion-button>
   </ion-col>
 
-  <ion-col *ngIf="step !== null && step.startAt === null && step.arrivedAt !== null" id="container">
-    <ion-button expand="block" color="primary" (click)="startDelivery()">
+  <ion-col *ngIf="step && step.startAt === null && step.arrivedAt !== null" id="container">
+    <ion-button expand="block" color="primary" size="large" (click)="startDelivery()">
       <ion-icon slot="start" name="caret-forward-outline"></ion-icon>
       Commencer le déchargement
     </ion-button>
   </ion-col>
 
-  <ion-grid *ngIf="step !== null && step.endAt === null && step.startAt !== null">
-    <form [formGroup]="deliveryForm" (ngSubmit)="markAsDelivered()">
+  <ion-grid *ngIf="step && step.endAt === null && step.startAt !== null">
+    <ion-grid *ngIf="!formInit" id="container">
+      <ion-row>
+        <ion-col size="12" size-sm="8" offset-sm="2" class="ion-text-center">
+          <ion-spinner color="primary"></ion-spinner>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+    <form [formGroup]="deliveryForm" (ngSubmit)="markAsDelivered()" *ngIf="formInit">
     <ion-row *ngFor="let order of step.orders">
       <ion-col>
         <ng-container formArrayName="palets">
@@ -105,14 +112,14 @@
     </ion-row>
     <ion-col>
       <ion-button class="ion-margin-top" expand="block" color="primary" type="submit">
-        <ion-icon slot="start" name="caret-forward-outline"></ion-icon>
+        <ion-icon slot="start" name="caret-forward-outline" size="large"></ion-icon>
         Terminer
       </ion-button>
     </ion-col>
   </form>
 </ion-grid>
 
-<ion-col *ngIf="step !== null && step.leaveAt === null && step.endAt !== null" id="container">
+<ion-col *ngIf="step && step.leaveAt === null && step.endAt !== null" id="container">
   <ion-button expand="block" color="primary" (click)="markAsLeft()">
     <ion-icon slot="start" name="caret-forward-outline"></ion-icon>
     Quitter

@@ -32,8 +32,6 @@ export class StepAnomalyPage implements OnInit {
         'step': new FormControl(this.steps),
         'comment': new FormControl(''),
       });
-      console.log(this.anomalyForm.value['step']);
-      // this.anomalyForm.addControl(this.currentAnomalyType, FormControl);
       this.anomalyForm.controls['comment'].setValidators([Validators.required, Validators.maxLength(255), Validators.minLength(2)]);
       this.anomalyForm.controls['type'].setValidators([Validators.required]);
       this.anomalyForm.controls['step'].setValidators([Validators.required]);

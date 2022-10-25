@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import * as Rx from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { io } from 'socket.io-client';
+import { AuthService } from '../auth/auth.service';
 
 
 @Injectable()
@@ -11,11 +12,22 @@ export class WebsocketService {
 
   // Our socket connection
   private socket;
-
-  constructor() { }
+  authToken: string = "";
+  constructor(private authService: AuthService) { }
 
   connect(): Rx.Subject<MessageEvent> {
-    this.socket = io(environment.backendURL);
+    this.authService.token.subscribe(token => {
+      this.authToken = token;
+      this.socket = io(environment.backendURL, {
+        transportOptions: {
+          polling: {
+            extraHeaders: {
+              Authorization: `Bearer ${this.authToken}`,
+            }
+          }
+        }
+      });
+    })
 
     // We define our observable which will observe any incoming messages
     // from our socket.io server.

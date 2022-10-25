@@ -1,6 +1,6 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>profile</ion-title>
+    <ion-title>Mon profil</ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -12,10 +12,44 @@
       </ion-col>
     </ion-row>
   </ion-grid>
-  <ion-col *ngIf="!isLoading" id="container">
-    <ion-button expand="block" color="primary" (click)="onLogout()">
-      <ion-icon slot="start" name="power-outline"></ion-icon>
-        Se déconnecter
-    </ion-button>
-  </ion-col>
+
+  <ion-grid *ngIf="!isLoading && user" id="container">
+    <ion-row>
+      <ion-col>
+        <img class="card_avatar" src="https://randomuser.me/api/portraits/men/{{ user.id }}.jpg">
+      </ion-col>
+    </ion-row>
+
+    <ion-col>
+      <ion-list lines="inset">
+        <ion-item-group>
+          <ion-item-divider>
+            <ion-label>
+              <h2>Informations personnelles</h2>
+            </ion-label>
+          </ion-item-divider>
+          <ion-item>
+            <ion-label>NOM</ion-label>
+            <ion-note slot="end">{{ user.lastName.toUpperCase() }}</ion-note>
+          </ion-item>
+          <ion-item>
+            <ion-label>Prénom</ion-label>
+            <ion-note slot="end">{{ user.firstName.toUpperCase() }}</ion-note>
+          </ion-item>
+          <ion-item>
+            <ion-label>Email</ion-label>
+            <ion-note slot="end">{{ user.email }}</ion-note>
+          </ion-item>
+        </ion-item-group>
+
+      </ion-list>
+
+    </ion-col>
+    <ion-col>
+      <ion-button expand="block" color="primary" (click)="onLogout()">
+        <ion-icon slot="start" name="power-outline"></ion-icon>
+          Me déconnecter
+      </ion-button>
+    </ion-col>
+  </ion-grid>
 </ion-content>

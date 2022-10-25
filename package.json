@@ -40,6 +40,7 @@
     "cordova-plugin-android-permissions": "^1.1.4",
     "cordova-plugin-request-location-accuracy": "^2.3.0",
     "ionic-native": "^2.9.0",
+    "ngx-socket-io": "^4.3.1",
     "rxjs": "^6.6.7",
     "signature_pad": "^4.0.7",
     "socket.io-client": "^4.5.2",
